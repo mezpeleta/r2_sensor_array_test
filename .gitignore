@@ -36,6 +36,8 @@ Makefile*
 *.debug
 *.release
 *appdatalocal*
+release/*
+debug/*
 
 # Qt unit tests
 target_wrapper.*
