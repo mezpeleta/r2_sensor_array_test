@@ -103,6 +103,7 @@ public slots:
     void prependText(QString text);
     void setStatusLabel(BannerStyles style);
     void btnStart_Clicked();
+    void btnClearLog_Clicked();
     void actionExit_Triggered();
     void actionAbout_Triggered();
     void closeEvent(QCloseEvent *event) override;

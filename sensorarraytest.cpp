@@ -26,6 +26,7 @@ SensorArrayTest::SensorArrayTest(QWidget *parent)
     connect(ui->btnStart, SIGNAL(clicked()), this, SLOT(btnStart_Clicked()));
     connect(ui->actionExit, SIGNAL(triggered()), this, SLOT(actionExit_Triggered()));
     connect(ui->actionAbout, SIGNAL(triggered()), this, SLOT(actionAbout_Triggered()));
+    connect(ui->btnClearLog, SIGNAL(clicked()), this, SLOT(btnClearLog_Clicked()));
 
     _indicatorMap =
     {
@@ -430,6 +431,11 @@ void SensorArrayTest::btnStart_Clicked()
     }
 
     _testRunning = false;
+}
+
+void SensorArrayTest::btnClearLog_Clicked()
+{
+    ui->txtLog->setPlainText("");
 }
 
 void SensorArrayTest::actionExit_Triggered()
