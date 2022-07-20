@@ -7,7 +7,6 @@
 
 #define TAG_WINDOW_GEOMETRY "geometry"
 #define TAG_WINDOW_STATE "windowstate"
-
 #define LOG_MAX_LEN 65535
 #define LOG_TRIM_LENGTH 2048
 
