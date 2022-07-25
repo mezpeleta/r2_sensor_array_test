@@ -1,6 +1,7 @@
 #ifndef SENSORARRAYTEST_H
 #define SENSORARRAYTEST_H
 
+#define useSignal   // To see if visually logging is better one way or the other
 #define DEBUG false
 
 #include <QMainWindow>
