@@ -58,7 +58,7 @@ SensorArrayTest::~SensorArrayTest()
 void SensorArrayTest::enumerateECON()
 {
     libusb_context *ctx = nullptr;
-    libusb_device **devList;
+    libusb_device **devList = nullptr;
     libusb_device_handle *devHandle = nullptr;
     size_t devCount = 0;
     int res = 0;
@@ -66,10 +66,14 @@ void SensorArrayTest::enumerateECON()
     unsigned char string_buffer_product[4096];
     unsigned char string_buffer_serial[4096];
 
-    emit requestPrepend("Enumerating uncliamed USB devices - E-Con Cameras");
+#ifdef useSignal
+    emit requestPrepend("Enumerating unclaimed USB devices (E-Con Cameras)...");
 
     QCoreApplication::sendPostedEvents();
     QCoreApplication::processEvents();
+#else
+    prependText("Enumerating unclaimed USB devices (E-Con Cameras)...");
+#endif
 
     if (libusb_init(&ctx) >= 0)
     {
@@ -125,10 +129,14 @@ void SensorArrayTest::enumerateBasler()
     DeviceInfoList baslerDevs;
     int baslerCount = tlFactory.EnumerateDevices(baslerDevs);
 
-    emit requestPrepend("Enumerating Basler Devices");
+#ifdef useSignal
+    emit requestPrepend("Enumerating Basler Devices...");
 
     QCoreApplication::sendPostedEvents();
     QCoreApplication::processEvents();
+#else
+    prependText("Enumerating Basler Devices...");
+#endif
 
     for (int i = 0; i < baslerCount; i++)
     {
@@ -158,10 +166,14 @@ void SensorArrayTest::enumerateIntel()
     rs2::context ctx;
     rs2::device_list dev_list = ctx.query_devices();
 
-    emit requestPrepend("Enumerating Realsense Devices");
+#ifdef useSignal
+    emit requestPrepend("Enumerating Realsense Devices...");
 
     QCoreApplication::sendPostedEvents();
     QCoreApplication::processEvents();
+#else
+    prependText("Enumerating Realsense Devices...");
+#endif
 
     for (const auto&& dev : dev_list)
     {
@@ -186,10 +198,14 @@ bool SensorArrayTest::evaluateDevices()
 {
     bool retVal = false;
 
-    emit requestPrepend("Evaluating emunerated devices...");
+#ifdef useSignal
+    emit requestPrepend("Evaluating enumerated devices...");
 
     QCoreApplication::sendPostedEvents();
     QCoreApplication::processEvents();
+#else
+    prependText("Evaluating enumerated devices...");
+#endif
 
     for (const auto &dev : qAsConst(_devList))
     {
@@ -214,11 +230,22 @@ bool SensorArrayTest::evaluateDevices()
         retVal = true;
     }
 
+#ifdef useSignal
     emit requestPrepend(QString("Total Devices: %1").arg(_cameraCount + _realsenseCount));
     emit requestPrepend(QString("Total Standard Cameras: %1").arg(_cameraCount));
     emit requestPrepend(QString("Total Realsense Cameras: %1").arg(_realsenseCount));
     emit requestPrepend(QString("Color Cameras: %1").arg(_colorCamCount));
     emit requestPrepend(QString("Monochrome Cameras: %1").arg(_monoCamCount));
+
+    QCoreApplication::sendPostedEvents();
+    QCoreApplication::processEvents();
+#else
+    prependText(QString("Total Devices: %1").arg(_cameraCount + _realsenseCount));
+    prependText(QString("Total Standard Cameras: %1").arg(_cameraCount));
+    prependText(QString("Total Realsense Cameras: %1").arg(_realsenseCount));
+    prependText(QString("Color Cameras: %1").arg(_colorCamCount));
+    prependText(QString("Monochrome Cameras: %1").arg(_monoCamCount));
+#endif
 
     QCoreApplication::sendPostedEvents();
     QCoreApplication::processEvents();
@@ -232,7 +259,6 @@ void SensorArrayTest::createTestLog(bool &result)
 {
     int grpCount = 0;
     uint testCount = 0;
-    QString header;
     QStringList testResults;
     int totalDevCount = _cameraCount + _realsenseCount;
     QString resStr = "";
@@ -244,6 +270,15 @@ void SensorArrayTest::createTestLog(bool &result)
 
     _testData.clear();
     _header.clear();
+
+#ifdef useSignal
+    emit requestPrepend("Creating formatted data set...");
+
+    QCoreApplication::sendPostedEvents();
+    QCoreApplication::processEvents();
+#else
+    prependText("Creating formatted data set...");
+#endif
 
     testResults << makeRow("Num", "Test Group", "Index", "Test Name", "LL", "Value", "HL", "Unit", "Result");
     testResults << appendSeparator();
@@ -274,38 +309,38 @@ void SensorArrayTest::createTestLog(bool &result)
     testCount = 0;
 
     // Center cam is color, side cams are either... Min 1 color cam if 2x mono - these params are tied together for config
-    if ((_colorCamCount == REQUIRED_COLOR_CAMERA_COUNT_MIN) && (_monoCamCount == REQUIRED_MONO_CAMERA_MAX))
+    if (_colorCamCount == COLOR_CAM_COUNT_LOW_LIM)
     {
         colorOK = true;
-        monoOK = true;
-    }
-    else if ((_colorCamCount == REQUIRED_COLOR_CAMERA_COUNT_MAX) && (_monoCamCount == REQUIRED_MONO_CAMERA_MIN))
-    {
-        colorOK = true;
-        monoOK = true;
-    }
-    else if (_colorCamCount == REQUIRED_COLOR_CAMERA_COUNT_MIN)
-    {
-        if (_monoCamCount < REQUIRED_MONO_CAMERA_MAX)
+
+        if (_monoCamCount == MONO_CAM_COUNT_LOW_LIM)
         {
-            colorOK = true;
+            monoOK = true;
+        }
+        else
+        {
             monoOK = false;
         }
     }
-    else if (_monoCamCount == REQUIRED_MONO_CAMERA_MAX)
+    else
     {
-        if (_colorCamCount < REQUIRED_COLOR_CAMERA_COUNT_MIN)
+        colorOK = false;
+
+        if (_monoCamCount == MONO_CAM_COUNT_LOW_LIM)
         {
-            colorOK = false;
             monoOK = true;
+        }
+        else
+        {
+            monoOK = false;
         }
     }
 
     tmpRes = monoOK;
     totalResult &= tmpRes;
     resStr = tmpRes ? "PASS" : "FAIL";
-    testResults << makeRow("", "", QString::number(++testCount), TEST_NAME_MONO_CAM_COUNT, MONO_CAM_COUNT_LOW_LIM,
-                           QString::number(_monoCamCount), MONO_CAM_COUNT_HIGH_LIM, "EA", resStr);
+    testResults << makeRow("", "", QString::number(++testCount), TEST_NAME_MONO_CAM_COUNT, QString::number(MONO_CAM_COUNT_LOW_LIM),
+                           QString::number(_monoCamCount), QString::number(MONO_CAM_COUNT_HIGH_LIM), "EA", resStr);
 
     tmpRes = colorOK;
     totalResult &= tmpRes;
@@ -313,11 +348,11 @@ void SensorArrayTest::createTestLog(bool &result)
     testResults << makeRow("", "", QString::number(++testCount), TEST_NAME_COLOR_CAM_COUNT, QString::number(COLOR_CAM_COUNT_LOW_LIM),
                            QString::number(_colorCamCount), QString::number(COLOR_CAM_COUNT_HIGH_LIM), "EA", resStr);
 
-    tmpRes = monoOK && colorOK;
+    tmpRes = monoOK && colorOK && (_realsenseCount == REALSENSE_COUNT_LOW_LIM);
     totalResult &= tmpRes;
     resStr = tmpRes ? "PASS" : "FAIL";
     testResults << makeRow("", "", QString::number(++testCount), TEST_SENSOR_CONFIGURATION, QString::number(ARRAY_CONFIG_LOW_LIM),
-                           (monoOK && colorOK) ? "1" : "-1", QString::number(ARRAY_CONFIG_HIGH_LIM), "EA", resStr);
+                           (tmpRes) ? "1" : "0", QString::number(ARRAY_CONFIG_HIGH_LIM), "EA", resStr);
 
     testResults << appendSeparator();
 
